@@ -1,0 +1,22 @@
+# Dependencies
+/vendor/
+
+# Environment & config secrets
+.env
+.env.backup
+.env.local
+
+# Generated PDFs
+/storage/pdf/*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+
+# PHP logs
+*.log

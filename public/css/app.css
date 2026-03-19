@@ -1,0 +1,176 @@
+/* ============================================================
+   GestStock — Custom Styles
+   ============================================================ */
+
+/* ─── Layout ────────────────────────────────────────────── */
+
+#wrapper {
+  min-height: 100vh;
+}
+
+#sidebar {
+  width: 240px;
+  min-height: 100vh;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  overflow-x: hidden;
+}
+
+#sidebar.collapsed {
+  width: 0;
+}
+
+#page-content {
+  overflow-x: auto;
+}
+
+/* ─── Sidebar nav links ─────────────────────────────────── */
+
+#sidebar .nav-link {
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+
+#sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+#sidebar .nav-link.active {
+  background: rgba(13, 110, 253, 0.85);
+  font-weight: 600;
+}
+
+.sidebar-label {
+  font-size: 0.7rem;
+}
+
+/* ─── Topbar ────────────────────────────────────────────── */
+
+.topbar {
+  min-height: 52px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* ─── Cards ─────────────────────────────────────────────── */
+
+.card {
+  border-radius: 12px;
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0 !important;
+  font-size: 0.92rem;
+}
+
+/* ─── Stat icons ────────────────────────────────────────── */
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ─── Tables ────────────────────────────────────────────── */
+
+.table th {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+/* ─── Badges ────────────────────────────────────────────── */
+
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+/* ─── Forms ─────────────────────────────────────────────── */
+
+.form-control:focus,
+.form-select:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.2rem rgba(13,110,253,.15);
+}
+
+/* ─── Invoice line table ────────────────────────────────── */
+
+#itemsTable td,
+#itemsTable th {
+  padding: 0.45rem 0.6rem;
+}
+
+#itemsTable .form-control-sm,
+#itemsTable .form-select-sm {
+  font-size: 0.85rem;
+}
+
+/* ─── Print page ────────────────────────────────────────── */
+
+@media print {
+  #wrapper,
+  #page-content {
+    display: block !important;
+  }
+  #sidebar,
+  .topbar,
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* ─── Responsive ────────────────────────────────────────── */
+
+@media (max-width: 767.98px) {
+  #sidebar {
+    position: fixed;
+    z-index: 200;
+    height: 100vh;
+    left: 0;
+    top: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  #sidebar.mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  }
+
+  #page-content {
+    width: 100%;
+  }
+}
+
+/* ─── Misc ──────────────────────────────────────────────── */
+
+code {
+  font-size: 0.82em;
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #c026d3;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+}
+
+/* Smooth table row hover */
+.table-hover tbody tr {
+  transition: background 0.1s;
+}
