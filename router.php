@@ -1,7 +1,8 @@
 <?php
 /**
  * PHP built-in server router.
- * Usage: php -S localhost:8080 router.php
+ * Usage (dev only): php -S localhost:8080 router.php
+ * Production: use nginx.conf with PHP-FPM (Nginx handles routing natively).
  */
 
 $uri = $_SERVER['REQUEST_URI'];

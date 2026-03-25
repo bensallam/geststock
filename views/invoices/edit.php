@@ -79,6 +79,39 @@ $productsJson = json_encode(array_map(fn($p) => [
                 <option value="cancelled" <?= ($old['status'] ?? '') === 'cancelled' ? 'selected' : '' ?>>Annulée</option>
               </select>
             </div>
+            <div class="col-md-2">
+              <label class="form-label fw-semibold">Mode de règlement</label>
+              <select name="payment_method" class="form-select">
+                <option value="">— Non précisé —</option>
+                <?php foreach (['cheque' => 'Chèque', 'espece' => 'Espèce', 'virement' => 'Virement bancaire'] as $val => $lbl): ?>
+                  <option value="<?= $val ?>" <?= ($old['payment_method'] ?? '') === $val ? 'selected' : '' ?>>
+                    <?= $lbl ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <?php if (!empty($companies)): ?>
+            <div class="col-md-3">
+              <label class="form-label fw-semibold">Entreprise</label>
+              <select name="company_id" class="form-select">
+                <option value="">— Paramètres généraux —</option>
+                <?php foreach ($companies as $co): ?>
+                  <option value="<?= $co['id'] ?>"
+                    <?= (int)($old['company_id'] ?? 0) === (int)$co['id'] ? 'selected' : '' ?>>
+                    <?= e($co['company_name']) ?><?= $co['is_active'] ? ' ★' : '' ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <div class="form-check form-switch pb-1">
+                <input class="form-check-input" type="checkbox" role="switch"
+                       name="use_watermark" id="useWatermark" value="1"
+                       <?= !empty($old['use_watermark']) ? 'checked' : '' ?>>
+                <label class="form-check-label" for="useWatermark">Filigrane</label>
+              </div>
+            </div>
+            <?php endif; ?>
           </div>
         </div>
       </div>

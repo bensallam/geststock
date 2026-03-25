@@ -25,9 +25,12 @@ spl_autoload_register(function (string $class): void {
 });
 
 // ─── Router ─────────────────────────────────────────────────
-$route  = trim($_GET['route'] ?? '', '/');
-$route  = $route === '' ? 'dashboard' : $route;
-$method = $_SERVER['REQUEST_METHOD'];
+// Nginx uses try_files $uri $uri/ /index.php?$args — route comes from REQUEST_URI,
+// not from a ?route= rewrite parameter (Apache style).
+$requestPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$route       = trim($requestPath ?? '', '/');
+$route       = $route === '' ? 'dashboard' : $route;
+$method      = $_SERVER['REQUEST_METHOD'];
 
 // Map routes → [controller, action]
 $routes = [
@@ -75,6 +78,55 @@ $routes = [
 
     // Categories (AJAX)
     'categories/store'         => ['CategoryController',  'store'],
+
+    // Delivery notes
+    'delivery-notes'           => ['DeliveryNoteController', 'index'],
+    'delivery-notes/create'    => ['DeliveryNoteController', 'create'],
+    'delivery-notes/store'     => ['DeliveryNoteController', 'store'],
+    'delivery-notes/show'      => ['DeliveryNoteController', 'show'],
+    'delivery-notes/edit'      => ['DeliveryNoteController', 'edit'],
+    'delivery-notes/update'    => ['DeliveryNoteController', 'update'],
+    'delivery-notes/delete'    => ['DeliveryNoteController', 'delete'],
+    'delivery-notes/print'     => ['DeliveryNoteController', 'printView'],
+    'delivery-notes/pdf'       => ['DeliveryNoteController', 'pdf'],
+
+    // Guarantees
+    'guarantees'               => ['GuaranteeCertificateController', 'index'],
+    'guarantees/create'        => ['GuaranteeCertificateController', 'create'],
+    'guarantees/store'         => ['GuaranteeCertificateController', 'store'],
+    'guarantees/show'          => ['GuaranteeCertificateController', 'show'],
+    'guarantees/edit'          => ['GuaranteeCertificateController', 'edit'],
+    'guarantees/update'        => ['GuaranteeCertificateController', 'update'],
+    'guarantees/delete'        => ['GuaranteeCertificateController', 'delete'],
+    'guarantees/print'         => ['GuaranteeCertificateController', 'printView'],
+    'guarantees/pdf'           => ['GuaranteeCertificateController', 'pdf'],
+
+    // Onboarding
+    'onboarding'               => ['OnboardingController', 'show'],
+    'onboarding/store'         => ['OnboardingController', 'store'],
+
+    // Companies
+    'companies'                    => ['CompanyController',   'index'],
+    'companies/create'             => ['CompanyController',   'create'],
+    'companies/store'              => ['CompanyController',   'store'],
+    'companies/edit'               => ['CompanyController',   'edit'],
+    'companies/update'             => ['CompanyController',   'update'],
+    'companies/delete'             => ['CompanyController',   'delete'],
+    'companies/set-active'         => ['CompanyController',   'setActive'],
+    'companies/upload-logo'        => ['CompanyController',   'uploadLogo'],
+    'companies/delete-logo'        => ['CompanyController',   'deleteLogo'],
+    'companies/logo'               => ['CompanyController',   'logo'],
+    'companies/upload-watermark'   => ['CompanyController',   'uploadWatermark'],
+    'companies/delete-watermark'   => ['CompanyController',   'deleteWatermark'],
+    'companies/update-opacity'     => ['CompanyController',   'updateOpacity'],
+    'companies/watermark'          => ['CompanyController',   'watermark'],
+
+    // Settings
+    'settings'                 => ['SettingsController',  'index'],
+    'settings/update'          => ['SettingsController',  'update'],
+    'settings/upload-logo'     => ['SettingsController',  'uploadLogo'],
+    'settings/delete-logo'     => ['SettingsController',  'deleteLogo'],
+    'settings/logo'            => ['SettingsController',  'logo'],
 ];
 
 if (isset($routes[$route])) {

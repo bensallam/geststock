@@ -116,11 +116,14 @@ class Invoice
             // Insert header
             $stmt = $this->db->prepare(
                 "INSERT INTO invoices
-                    (invoice_number, client_id, date, total_ht, tax_rate, tax_amount, total_ttc, notes, status)
+                    (company_id, use_watermark, invoice_number, client_id, date,
+                     total_ht, tax_rate, tax_amount, total_ttc, notes, status, payment_method)
                  VALUES
-                    (:num, :cid, :date, :ht, :rate, :tax, :ttc, :notes, :status)"
+                    (:coid, :wm, :num, :cid, :date, :ht, :rate, :tax, :ttc, :notes, :status, :pmeth)"
             );
             $stmt->execute([
+                ':coid'   => $data['company_id']     ?: null,
+                ':wm'     => !empty($data['use_watermark']) ? 1 : 0,
                 ':num'    => $data['invoice_number'],
                 ':cid'    => $data['client_id'],
                 ':date'   => $data['date'],
@@ -128,8 +131,9 @@ class Invoice
                 ':rate'   => $data['tax_rate'],
                 ':tax'    => $data['tax_amount'],
                 ':ttc'    => $data['total_ttc'],
-                ':notes'  => $data['notes'] ?? null,
-                ':status' => $data['status'] ?? 'draft',
+                ':notes'  => $data['notes']          ?? null,
+                ':status' => $data['status']         ?? 'draft',
+                ':pmeth'  => $data['payment_method'] ?: null,
             ]);
             $invoiceId = (int) $this->db->lastInsertId();
 
@@ -171,12 +175,16 @@ class Invoice
             // Update header
             $stmt = $this->db->prepare(
                 "UPDATE invoices
-                 SET invoice_number = :num, client_id = :cid, date = :date,
-                     total_ht = :ht, tax_rate = :rate, tax_amount = :tax,
-                     total_ttc = :ttc, notes = :notes, status = :status
+                 SET company_id     = :coid, use_watermark  = :wm,
+                     invoice_number = :num,  client_id      = :cid,   date       = :date,
+                     total_ht       = :ht,   tax_rate       = :rate,  tax_amount = :tax,
+                     total_ttc      = :ttc,  notes          = :notes, status     = :status,
+                     payment_method = :pmeth
                  WHERE id = :id"
             );
             $stmt->execute([
+                ':coid'   => $data['company_id']     ?: null,
+                ':wm'     => !empty($data['use_watermark']) ? 1 : 0,
                 ':num'    => $data['invoice_number'],
                 ':cid'    => $data['client_id'],
                 ':date'   => $data['date'],
@@ -184,8 +192,9 @@ class Invoice
                 ':rate'   => $data['tax_rate'],
                 ':tax'    => $data['tax_amount'],
                 ':ttc'    => $data['total_ttc'],
-                ':notes'  => $data['notes'] ?? null,
-                ':status' => $data['status'] ?? 'draft',
+                ':notes'  => $data['notes']          ?? null,
+                ':status' => $data['status']         ?? 'draft',
+                ':pmeth'  => $data['payment_method'] ?: null,
                 ':id'     => $id,
             ]);
 

@@ -3,6 +3,8 @@
 require_once __DIR__ . '/../models/Invoice.php';
 require_once __DIR__ . '/../models/Client.php';
 require_once __DIR__ . '/../models/Product.php';
+require_once __DIR__ . '/../models/Company.php';
+require_once __DIR__ . '/../models/CompanySettings.php';
 
 class InvoiceController
 {
@@ -45,11 +47,13 @@ class InvoiceController
     public function create(): void
     {
         requireAuth();
-        $clients  = $this->client->forSelect();
-        $products = $this->product->forSelect();
-        $errors   = [];
-        $old      = [];
-        $nextNum  = nextInvoiceNumber();
+        $clients   = $this->client->forSelect();
+        $products  = $this->product->forSelect();
+        $companies = (new Company())->forSelect();
+        $errors    = [];
+        $company   = $this->loadCompany();
+        $old       = ['notes' => $company['invoice_notes'] ?? '', 'company_id' => $company['id'] ?? ''];
+        $nextNum   = nextInvoiceNumber();
         require __DIR__ . '/../views/invoices/create.php';
     }
 
@@ -61,10 +65,11 @@ class InvoiceController
         [$data, $items, $errors] = $this->validateInvoice($_POST);
 
         if (!empty($errors)) {
-            $clients  = $this->client->forSelect();
-            $products = $this->product->forSelect();
-            $nextNum  = $data['invoice_number'];
-            $old      = $_POST;
+            $clients   = $this->client->forSelect();
+            $products  = $this->product->forSelect();
+            $companies = (new Company())->forSelect();
+            $nextNum   = $data['invoice_number'];
+            $old       = $_POST;
             require __DIR__ . '/../views/invoices/create.php';
             return;
         }
@@ -74,11 +79,12 @@ class InvoiceController
             setFlash('success', 'Facture ' . $data['invoice_number'] . ' créée avec succès.');
             redirect('invoices/show?id=' . $id);
         } catch (Throwable $e) {
-            $errors[] = 'Erreur lors de la création : ' . $e->getMessage();
-            $clients  = $this->client->forSelect();
-            $products = $this->product->forSelect();
-            $nextNum  = $data['invoice_number'];
-            $old      = $_POST;
+            $errors[]  = 'Erreur lors de la création : ' . $e->getMessage();
+            $clients   = $this->client->forSelect();
+            $products  = $this->product->forSelect();
+            $companies = (new Company())->forSelect();
+            $nextNum   = $data['invoice_number'];
+            $old       = $_POST;
             require __DIR__ . '/../views/invoices/create.php';
         }
     }
@@ -93,6 +99,7 @@ class InvoiceController
         $existingItems = $this->invoice->items($id);
         $clients       = $this->client->forSelect();
         $products      = $this->product->forSelect();
+        $companies     = (new Company())->forSelect();
         $errors        = [];
         $old           = $invoice;
         require __DIR__ . '/../views/invoices/edit.php';
@@ -111,9 +118,10 @@ class InvoiceController
 
         if (!empty($errors)) {
             $existingItems = $this->invoice->items($id);
-            $clients  = $this->client->forSelect();
-            $products = $this->product->forSelect();
-            $old      = $_POST;
+            $clients       = $this->client->forSelect();
+            $products      = $this->product->forSelect();
+            $companies     = (new Company())->forSelect();
+            $old           = $_POST;
             require __DIR__ . '/../views/invoices/edit.php';
             return;
         }
@@ -123,11 +131,12 @@ class InvoiceController
             setFlash('success', 'Facture mise à jour.');
             redirect('invoices/show?id=' . $id);
         } catch (Throwable $e) {
-            $errors[] = 'Erreur lors de la mise à jour : ' . $e->getMessage();
+            $errors[]      = 'Erreur lors de la mise à jour : ' . $e->getMessage();
             $existingItems = $this->invoice->items($id);
-            $clients  = $this->client->forSelect();
-            $products = $this->product->forSelect();
-            $old      = $_POST;
+            $clients       = $this->client->forSelect();
+            $products      = $this->product->forSelect();
+            $companies     = (new Company())->forSelect();
+            $old           = $_POST;
             require __DIR__ . '/../views/invoices/edit.php';
         }
     }
@@ -155,7 +164,8 @@ class InvoiceController
         $id      = (int) ($_GET['id'] ?? 0);
         $invoice = $this->invoice->find($id);
         if (!$invoice) { $this->notFound(); return; }
-        $items = $this->invoice->items($id);
+        $items   = $this->invoice->items($id);
+        $company = $this->loadDocumentCompany($invoice);
         require __DIR__ . '/../views/invoices/print.php';
     }
 
@@ -165,7 +175,8 @@ class InvoiceController
         $id      = (int) ($_GET['id'] ?? 0);
         $invoice = $this->invoice->find($id);
         if (!$invoice) { $this->notFound(); return; }
-        $items = $this->invoice->items($id);
+        $items   = $this->invoice->items($id);
+        $company = $this->loadDocumentCompany($invoice);
 
         // Try Dompdf if installed, else fall back to print page
         $dompdfPath = __DIR__ . '/../vendor/dompdf/dompdf/src/Dompdf.php';
@@ -205,6 +216,9 @@ class InvoiceController
     {
         $errors = [];
 
+        $validMethods = ['cheque', 'espece', 'virement'];
+        $pm = $post['payment_method'] ?? '';
+
         $data = [
             'invoice_number' => trim($post['invoice_number'] ?? ''),
             'client_id'      => (int) ($post['client_id'] ?? 0),
@@ -212,6 +226,9 @@ class InvoiceController
             'tax_rate'       => (float) ($post['tax_rate'] ?? TAX_RATE),
             'notes'          => trim($post['notes'] ?? ''),
             'status'         => $post['status'] ?? 'draft',
+            'payment_method' => in_array($pm, $validMethods, true) ? $pm : '',
+            'company_id'     => !empty($post['company_id']) ? (int) $post['company_id'] : null,
+            'use_watermark'  => !empty($post['use_watermark']) ? 1 : 0,
         ];
 
         if (empty($data['invoice_number'])) $errors[] = 'Le numéro de facture est obligatoire.';
@@ -259,6 +276,38 @@ class InvoiceController
         $data['total_ttc']  = $totalTtc;
 
         return [$data, $rawItems, $errors];
+    }
+
+    /** Load company for print/PDF — uses document's company_id if set. */
+    private function loadDocumentCompany(array $doc): array
+    {
+        if (!empty($doc['company_id'])) {
+            $cm      = new Company();
+            $company = $cm->find((int) $doc['company_id']);
+            if ($company) {
+                $company['logo_data_uri']      = $cm->logoDataUri((int) $doc['company_id']);
+                $company['watermark_data_uri'] = $cm->watermarkDataUri((int) $doc['company_id']);
+                return $company;
+            }
+        }
+        return $this->loadCompany();
+    }
+
+    /** Load active company for create/edit forms; falls back to CompanySettings. */
+    private function loadCompany(): array
+    {
+        $cm     = new Company();
+        $active = $cm->getActive();
+        if ($active) {
+            $active['logo_data_uri']      = $cm->logoDataUri((int) $active['id']);
+            $active['watermark_data_uri'] = $cm->watermarkDataUri((int) $active['id']);
+            return $active;
+        }
+        $cs      = new CompanySettings();
+        $company = $cs->get();
+        $company['logo_data_uri']      = $cs->logoDataUri();
+        $company['watermark_data_uri'] = null;
+        return $company;
     }
 
     private function notFound(): void

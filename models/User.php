@@ -44,4 +44,22 @@ class User
     {
         return password_hash($plain, PASSWORD_BCRYPT, ['cost' => 12]);
     }
+
+    /**
+     * Update the user's display name.
+     */
+    public function updateProfile(int $id, string $name): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET name = :name WHERE id = :id');
+        $stmt->execute([':name' => $name, ':id' => $id]);
+    }
+
+    /**
+     * Mark onboarding as completed for a user.
+     */
+    public function completeOnboarding(int $id): void
+    {
+        $stmt = $this->db->prepare('UPDATE users SET onboarding_completed = 1 WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+    }
 }

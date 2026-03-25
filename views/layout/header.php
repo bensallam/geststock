@@ -64,6 +64,36 @@
           <i class="bi bi-receipt me-2"></i> Factures
         </a>
       </li>
+
+      <li class="nav-item">
+        <a href="<?= APP_URL ?>/guarantees"
+           class="nav-link text-white <?= str_starts_with($route,'guarantees') ? 'active' : '' ?>">
+          <i class="bi bi-shield-check me-2"></i> Garanties
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="<?= APP_URL ?>/delivery-notes"
+           class="nav-link text-white <?= str_starts_with($route,'delivery-notes') ? 'active' : '' ?>">
+          <i class="bi bi-truck me-2"></i> Bons de livraison
+        </a>
+      </li>
+
+      <li class="sidebar-label px-3 pt-3 pb-1 text-uppercase text-secondary small">Compte</li>
+
+      <li class="nav-item">
+        <a href="<?= APP_URL ?>/companies"
+           class="nav-link text-white <?= str_starts_with($route,'companies') ? 'active' : '' ?>">
+          <i class="bi bi-buildings me-2"></i> Entreprises
+        </a>
+      </li>
+
+      <li class="nav-item">
+        <a href="<?= APP_URL ?>/settings"
+           class="nav-link text-white <?= str_starts_with($route,'settings') ? 'active' : '' ?>">
+          <i class="bi bi-gear me-2"></i> Paramètres
+        </a>
+      </li>
     </ul>
 
     <div class="px-3 py-3 border-top border-secondary">
@@ -85,7 +115,7 @@
       <button id="sidebarToggle" class="btn btn-sm btn-light border">
         <i class="bi bi-list fs-5"></i>
       </button>
-      <nav aria-label="breadcrumb" class="mb-0">
+      <nav aria-label="breadcrumb" class="mb-0 flex-grow-1">
         <ol class="breadcrumb mb-0">
           <?php foreach ($breadcrumbs ?? [] as $label => $url): ?>
             <?php if ($url): ?>
@@ -98,6 +128,18 @@
           <?php endforeach; ?>
         </ol>
       </nav>
+      <?php
+        // Show active company badge
+        try {
+          $activeCoDb = db()->query('SELECT company_name FROM companies WHERE is_active = 1 LIMIT 1')->fetch();
+        } catch (Throwable) { $activeCoDb = false; }
+        if ($activeCoDb):
+      ?>
+        <a href="<?= APP_URL ?>/companies" class="badge bg-primary text-decoration-none"
+           title="Entreprise active — cliquer pour changer">
+          <i class="bi bi-building me-1"></i><?= e($activeCoDb['company_name']) ?>
+        </a>
+      <?php endif; ?>
     </header>
 
     <!-- Flash messages -->
