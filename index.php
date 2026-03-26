@@ -101,6 +101,17 @@ $routes = [
     'guarantees/print'         => ['GuaranteeCertificateController', 'printView'],
     'guarantees/pdf'           => ['GuaranteeCertificateController', 'pdf'],
 
+    // Devis
+    'devis'                    => ['DevisController',   'index'],
+    'devis/create'             => ['DevisController',   'create'],
+    'devis/store'              => ['DevisController',   'store'],
+    'devis/show'               => ['DevisController',   'show'],
+    'devis/edit'               => ['DevisController',   'edit'],
+    'devis/update'             => ['DevisController',   'update'],
+    'devis/delete'             => ['DevisController',   'delete'],
+    'devis/print'              => ['DevisController',   'printView'],
+    'devis/pdf'                => ['DevisController',   'pdf'],
+
     // Onboarding
     'onboarding'               => ['OnboardingController', 'show'],
     'onboarding/store'         => ['OnboardingController', 'store'],

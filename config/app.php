@@ -176,6 +176,28 @@ function paymentMethodLabel(string $method): string
 }
 
 /**
+ * Generate the next devis number.
+ */
+function nextDevisNumber(): string
+{
+    $year = date('Y');
+    $stmt = db()->prepare(
+        "SELECT devis_number FROM devis
+         WHERE devis_number LIKE :prefix
+         ORDER BY id DESC LIMIT 1"
+    );
+    $stmt->execute([':prefix' => "DEVIS-{$year}-%"]);
+    $last = $stmt->fetchColumn();
+
+    if ($last) {
+        $n = (int) substr($last, strrpos($last, '-') + 1);
+        return sprintf('DEVIS-%s-%03d', $year, $n + 1);
+    }
+
+    return "DEVIS-{$year}-001";
+}
+
+/**
  * Generate the next guarantee certificate number.
  */
 function nextCertificateNumber(): string

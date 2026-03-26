@@ -66,6 +66,13 @@
       </li>
 
       <li class="nav-item">
+        <a href="<?= APP_URL ?>/devis"
+           class="nav-link text-white <?= str_starts_with($route,'devis') ? 'active' : '' ?>">
+          <i class="bi bi-file-text me-2"></i> Devis
+        </a>
+      </li>
+
+      <li class="nav-item">
         <a href="<?= APP_URL ?>/guarantees"
            class="nav-link text-white <?= str_starts_with($route,'guarantees') ? 'active' : '' ?>">
           <i class="bi bi-shield-check me-2"></i> Garanties
