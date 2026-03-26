@@ -74,7 +74,13 @@ class Invoice
              ORDER BY ii.id"
         );
         $stmt->execute([':iid' => $invoiceId]);
-        return $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
+        foreach ($rows as &$row) {
+            $row['custom_data'] = !empty($row['custom_data'])
+                ? json_decode($row['custom_data'], true)
+                : [];
+        }
+        return $rows;
     }
 
     public function count(): int
@@ -117,9 +123,9 @@ class Invoice
             $stmt = $this->db->prepare(
                 "INSERT INTO invoices
                     (company_id, use_watermark, invoice_number, client_id, date,
-                     total_ht, tax_rate, tax_amount, total_ttc, notes, status, payment_method)
+                     total_ht, tax_rate, tax_amount, total_ttc, notes, custom_columns, status, payment_method)
                  VALUES
-                    (:coid, :wm, :num, :cid, :date, :ht, :rate, :tax, :ttc, :notes, :status, :pmeth)"
+                    (:coid, :wm, :num, :cid, :date, :ht, :rate, :tax, :ttc, :notes, :ccols, :status, :pmeth)"
             );
             $stmt->execute([
                 ':coid'   => $data['company_id']     ?: null,
@@ -131,9 +137,10 @@ class Invoice
                 ':rate'   => $data['tax_rate'],
                 ':tax'    => $data['tax_amount'],
                 ':ttc'    => $data['total_ttc'],
-                ':notes'  => $data['notes']          ?? null,
-                ':status' => $data['status']         ?? 'draft',
-                ':pmeth'  => $data['payment_method'] ?: null,
+                ':notes'  => $data['notes']           ?? null,
+                ':ccols'  => isset($data['custom_columns']) ? json_encode($data['custom_columns']) : null,
+                ':status' => $data['status']          ?? 'draft',
+                ':pmeth'  => $data['payment_method']  ?: null,
             ]);
             $invoiceId = (int) $this->db->lastInsertId();
 
@@ -176,10 +183,10 @@ class Invoice
             $stmt = $this->db->prepare(
                 "UPDATE invoices
                  SET company_id     = :coid, use_watermark  = :wm,
-                     invoice_number = :num,  client_id      = :cid,   date       = :date,
-                     total_ht       = :ht,   tax_rate       = :rate,  tax_amount = :tax,
-                     total_ttc      = :ttc,  notes          = :notes, status     = :status,
-                     payment_method = :pmeth
+                     invoice_number = :num,  client_id      = :cid,   date           = :date,
+                     total_ht       = :ht,   tax_rate       = :rate,  tax_amount     = :tax,
+                     total_ttc      = :ttc,  notes          = :notes, custom_columns = :ccols,
+                     status         = :status, payment_method = :pmeth
                  WHERE id = :id"
             );
             $stmt->execute([
@@ -192,9 +199,10 @@ class Invoice
                 ':rate'   => $data['tax_rate'],
                 ':tax'    => $data['tax_amount'],
                 ':ttc'    => $data['total_ttc'],
-                ':notes'  => $data['notes']          ?? null,
-                ':status' => $data['status']         ?? 'draft',
-                ':pmeth'  => $data['payment_method'] ?: null,
+                ':notes'  => $data['notes']           ?? null,
+                ':ccols'  => isset($data['custom_columns']) ? json_encode($data['custom_columns']) : null,
+                ':status' => $data['status']          ?? 'draft',
+                ':pmeth'  => $data['payment_method']  ?: null,
                 ':id'     => $id,
             ]);
 
@@ -249,8 +257,8 @@ class Invoice
     private function insertItems(int $invoiceId, array $items, string $context): void
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO invoice_items (invoice_id, product_id, label, quantity, unit_price, total)
-             VALUES (:iid, :pid, :label, :qty, :unit, :total)"
+            "INSERT INTO invoice_items (invoice_id, product_id, label, quantity, unit_price, total, custom_data)
+             VALUES (:iid, :pid, :label, :qty, :unit, :total, :cdata)"
         );
 
         foreach ($items as $item) {
@@ -258,6 +266,7 @@ class Invoice
             $unitPrice = (float) ($item['unit_price']  ?? 0);
             $total     = round($qty * $unitPrice, 2);
             $productId = !empty($item['product_id']) ? (int) $item['product_id'] : null;
+            $customData = !empty($item['custom_data']) ? json_encode($item['custom_data']) : null;
 
             $stmt->execute([
                 ':iid'   => $invoiceId,
@@ -266,6 +275,7 @@ class Invoice
                 ':qty'   => $qty,
                 ':unit'  => $unitPrice,
                 ':total' => $total,
+                ':cdata' => $customData,
             ]);
 
             // Deduct stock for linked products

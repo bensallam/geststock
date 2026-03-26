@@ -260,22 +260,45 @@
   <div class="cf"></div>
 
   <!-- Items -->
+  <?php
+    $customCols = [];
+    if (!empty($invoice['custom_columns'])) {
+        $decoded = is_array($invoice['custom_columns'])
+            ? $invoice['custom_columns']
+            : json_decode($invoice['custom_columns'], true);
+        if (is_array($decoded)) $customCols = $decoded;
+    }
+    $hasCustom = !empty($customCols);
+  ?>
   <table class="items">
     <thead>
       <tr>
-        <th style="width:55%">Désignation</th>
+        <th style="width:<?= $hasCustom ? '40%' : '55%' ?>">Désignation</th>
         <th class="r" style="width:10%">Qté</th>
-        <th class="r" style="width:18%">P.U. HT</th>
-        <th class="r" style="width:17%">Total HT</th>
+        <th class="r" style="width:<?= $hasCustom ? '14%' : '18%' ?>">P.U. HT</th>
+        <th class="r" style="width:<?= $hasCustom ? '12%' : '17%' ?>">Total HT</th>
+        <?php foreach ($customCols as $col): ?>
+        <th class="r"><?= e($col['label']) ?></th>
+        <?php endforeach; ?>
       </tr>
     </thead>
     <tbody>
-      <?php foreach ($items as $item): ?>
+      <?php foreach ($items as $item):
+        $cdata = [];
+        if (!empty($item['custom_data'])) {
+            $cdata = is_array($item['custom_data'])
+                ? $item['custom_data']
+                : json_decode($item['custom_data'], true);
+        }
+      ?>
       <tr>
         <td><?= e($item['label']) ?></td>
         <td class="r"><?= rtrim(rtrim(number_format((float)$item['quantity'], 2, ',', ' '), '0'), ',') ?></td>
         <td class="r"><?= formatMoney((float)$item['unit_price']) ?></td>
         <td class="r"><?= formatMoney((float)$item['total']) ?></td>
+        <?php foreach ($customCols as $col): ?>
+        <td class="r"><?= e($cdata[$col['key']] ?? '') ?></td>
+        <?php endforeach; ?>
       </tr>
       <?php endforeach; ?>
     </tbody>

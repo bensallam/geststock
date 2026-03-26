@@ -209,17 +209,37 @@ class InvoiceController
             'use_watermark'  => $invoice['use_watermark'],
         ];
 
+        // Custom columns definition
+        $customCols = [];
+        if (!empty($input['custom_columns']) && is_array($input['custom_columns'])) {
+            foreach ($input['custom_columns'] as $col) {
+                $key   = preg_replace('/[^a-z0-9_]/', '', $col['key'] ?? '');
+                $label = trim($col['label'] ?? '');
+                if ($key !== '' && $label !== '') {
+                    $customCols[] = ['key' => $key, 'label' => $label];
+                }
+            }
+        }
+        $data['custom_columns'] = $customCols ?: null;
+
         $rawItems = [];
         foreach (($input['items'] ?? []) as $item) {
             $label = trim($item['label'] ?? '');
             $qty   = (float) ($item['quantity']  ?? 0);
             $price = (float) ($item['unit_price'] ?? 0);
             if ($label === '' || $qty <= 0) continue;
+            $customData = [];
+            if (!empty($item['custom_data']) && is_array($item['custom_data'])) {
+                foreach ($customCols as $col) {
+                    $customData[$col['key']] = (string) ($item['custom_data'][$col['key']] ?? '');
+                }
+            }
             $rawItems[] = [
-                'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
-                'label'      => $label,
-                'quantity'   => $qty,
-                'unit_price' => $price,
+                'product_id'  => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                'label'       => $label,
+                'quantity'    => $qty,
+                'unit_price'  => $price,
+                'custom_data' => $customData ?: null,
             ];
         }
 

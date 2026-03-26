@@ -47,6 +47,14 @@
     .sig-place img { max-height: 72px; max-width: 100%; object-fit: contain; }
     .sig-line { border-top: 1px solid #555; padding-top: 5px; font-size: 9px; color: #888; text-align: center; }
     .doc-footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 9px; color: #888; text-align: center; line-height: 1.8; }
+    /* Custom column header */
+    .le-custom-col-th { position: relative; min-width: 80px; }
+    .le-custom-col-th .le-col-del { display: none; position: absolute; top: 2px; right: 2px; background: #ef4444; color: #fff; border: none; border-radius: 2px; width: 14px; height: 14px; font-size: 9px; line-height: 14px; text-align: center; cursor: pointer; padding: 0; }
+    .le-custom-col-th:hover .le-col-del { display: block; }
+    /* Add-column button inside thead */
+    .le-add-col-th { background: #f2f2f2; border-top: 1px solid #bbb; border-bottom: 1px solid #bbb; padding: 4px 6px; width: 28px; text-align: center; }
+    .le-add-col-th button { background: none; border: 1px dashed #999; border-radius: 2px; width: 20px; height: 20px; font-size: 14px; line-height: 18px; color: #666; cursor: pointer; padding: 0; }
+    .le-add-col-th button:hover { background: #e2e8f0; color: #111; }
     @media print {
       body { background: #fff; }
       .page { max-width: 100%; margin: 0; padding: 0 14mm; box-shadow: none; border-radius: 0; }
@@ -55,6 +63,16 @@
   </style>
 </head>
 <body>
+
+<?php
+$customCols = [];
+if (!empty($invoice['custom_columns'])) {
+    $decoded = is_array($invoice['custom_columns'])
+        ? $invoice['custom_columns']
+        : json_decode($invoice['custom_columns'], true);
+    if (is_array($decoded)) $customCols = $decoded;
+}
+?>
 
 <!-- ── Toolbar ── -->
 <div class="le-toolbar no-print">
@@ -132,9 +150,9 @@
   <div class="cf"></div>
 
   <!-- Items table -->
-  <table class="items">
+  <table class="items" id="itemsTable">
     <thead>
-      <tr>
+      <tr id="itemsHeadRow">
         <th style="width:50%">Désignation</th>
         <th class="no-print" style="width:28px;"></th>
         <th class="r" style="width:10%">Qté</th>
@@ -146,10 +164,21 @@
           </span>
         </th>
         <th class="r" style="width:17%">Total HT</th>
+        <?php foreach ($customCols as $col): ?>
+        <th class="r le-custom-col-th" data-col-key="<?= e($col['key']) ?>">
+          <span class="le-col-label le-editable" contenteditable="true"><?= e($col['label']) ?></span>
+          <button type="button" class="le-col-del no-print" onclick="removeColumn('<?= e($col['key']) ?>')" title="Supprimer colonne">✕</button>
+        </th>
+        <?php endforeach; ?>
+        <th class="le-add-col-th no-print">
+          <button type="button" onclick="addColumn()" title="Ajouter une colonne">+</button>
+        </th>
       </tr>
     </thead>
     <tbody id="itemsTbody">
-      <?php foreach ($items as $item): ?>
+      <?php foreach ($items as $item):
+        $cdata = is_array($item['custom_data']) ? $item['custom_data'] : [];
+      ?>
       <tr class="le-item-row" data-product-id="<?= (int)($item['product_id'] ?? 0) ?>">
         <td>
           <span class="le-label le-editable" contenteditable="true"
@@ -167,6 +196,11 @@
                  value="<?= (float)$item['unit_price'] ?>" min="0" step="0.01" style="width:80px">
         </td>
         <td class="r"><span class="le-row-total"><?= formatMoney((float)$item['total']) ?></span></td>
+        <?php foreach ($customCols as $col): ?>
+        <td class="r le-custom-cell" data-col-key="<?= e($col['key']) ?>">
+          <span class="le-editable" contenteditable="true" style="display:block;min-width:40px;"><?= e($cdata[$col['key']] ?? '') ?></span>
+        </td>
+        <?php endforeach; ?>
       </tr>
       <?php endforeach; ?>
     </tbody>

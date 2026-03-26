@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
   // Bind existing item rows
   document.querySelectorAll('.le-item-row').forEach(bindRowEvents);
 
+  // Bind existing custom column label edits + custom cell edits
+  document.querySelectorAll('.le-col-label').forEach(function (el) {
+    el.addEventListener('input', markDirty);
+  });
+  document.querySelectorAll('.le-custom-cell [contenteditable]').forEach(function (el) {
+    el.addEventListener('input', markDirty);
+  });
+
   // Watch all named contenteditable/input/select fields
   document.querySelectorAll('[data-field]').forEach(function (el) {
     var evt = (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')
@@ -102,7 +110,7 @@ function setText(id, val) {
 /* ── Collect data from DOM ──────────────────────────────────── */
 
 function collectData() {
-  var data = { id: LE_CONFIG.docId, items: [] };
+  var data = { id: LE_CONFIG.docId, items: [], custom_columns: [] };
 
   // All named fields (skip those inside item rows — handled below)
   document.querySelectorAll('[data-field]').forEach(function (el) {
@@ -113,6 +121,14 @@ function collectData() {
     } else {
       data[field] = el.textContent.trim();
     }
+  });
+
+  // Custom column definitions
+  document.querySelectorAll('.le-custom-col-th').forEach(function (th) {
+    var key      = th.dataset.colKey;
+    var labelEl  = th.querySelector('.le-col-label');
+    var label    = labelEl ? labelEl.textContent.trim() : key;
+    if (key) data.custom_columns.push({ key: key, label: label });
   });
 
   // Item rows
@@ -126,11 +142,20 @@ function collectData() {
       : '';
     if (!label) return;
 
+    // Custom cell values
+    var customData = {};
+    row.querySelectorAll('.le-custom-cell').forEach(function (cell) {
+      var colKey = cell.dataset.colKey;
+      var valEl  = cell.querySelector('[contenteditable]');
+      if (colKey) customData[colKey] = valEl ? valEl.textContent.trim() : '';
+    });
+
     data.items.push({
-      product_id: row.dataset.productId || null,
-      label:      label,
-      quantity:   qtyEl   ? (parseFloat(qtyEl.value)   || 1) : 1,
-      unit_price: priceEl ? (parseFloat(priceEl.value)  || 0) : 0,
+      product_id:  row.dataset.productId || null,
+      label:       label,
+      quantity:    qtyEl   ? (parseFloat(qtyEl.value)   || 1) : 1,
+      unit_price:  priceEl ? (parseFloat(priceEl.value)  || 0) : 0,
+      custom_data: customData,
     });
   });
 
@@ -187,6 +212,16 @@ function addItemRow(tbodyId, hasPrices) {
     ? '<td class="r"><span class="le-row-total">0,00 MAD</span></td>'
     : '';
 
+  // Append cells for each existing custom column
+  var customCells = '';
+  document.querySelectorAll('.le-custom-col-th').forEach(function (th) {
+    var key = th.dataset.colKey || '';
+    customCells +=
+      '<td class="r le-custom-cell" data-col-key="' + _esc(key) + '">' +
+        '<span class="le-editable" contenteditable="true" style="display:block;min-width:40px;"></span>' +
+      '</td>';
+  });
+
   tr.innerHTML =
     '<td>' +
       '<span class="le-label le-editable" contenteditable="true" ' +
@@ -196,11 +231,71 @@ function addItemRow(tbodyId, hasPrices) {
       '<button type="button" class="le-row-del" onclick="removeItemRow(this)" title="Supprimer">✕</button>' +
     '</td>' +
     '<td class="r"><input type="number" class="le-input le-qty le-recalc" value="1" min="0.01" step="0.01" style="width:60px"></td>' +
-    priceCol + totalCol;
+    priceCol + totalCol + customCells;
 
   tbody.appendChild(tr);
   bindRowEvents(tr);
   recalc();
+}
+
+/* ── Custom column management ────────────────────────────────── */
+
+function addColumn() {
+  var label = prompt('Nom de la nouvelle colonne :', 'Colonne');
+  if (!label || !label.trim()) return;
+  label = label.trim();
+  var key = 'col_' + Date.now();
+
+  // Add th before the + button th
+  var headRow  = document.getElementById('itemsHeadRow');
+  var addColTh = headRow ? headRow.querySelector('.le-add-col-th') : null;
+
+  var th = document.createElement('th');
+  th.className        = 'r le-custom-col-th';
+  th.dataset.colKey   = key;
+  th.innerHTML =
+    '<span class="le-col-label le-editable" contenteditable="true">' + _esc(label) + '</span>' +
+    '<button type="button" class="le-col-del no-print" ' +
+            'onclick="removeColumn(\'' + key + '\')" title="Supprimer colonne">✕</button>';
+
+  if (addColTh) {
+    headRow.insertBefore(th, addColTh);
+  } else if (headRow) {
+    headRow.appendChild(th);
+  }
+
+  // Bind label edits to markDirty
+  var labelEl = th.querySelector('.le-col-label');
+  if (labelEl) labelEl.addEventListener('input', markDirty);
+
+  // Add empty cell to every existing row
+  document.querySelectorAll('.le-item-row').forEach(function (row) {
+    var td = document.createElement('td');
+    td.className      = 'r le-custom-cell';
+    td.dataset.colKey = key;
+    td.innerHTML = '<span class="le-editable" contenteditable="true" style="display:block;min-width:40px;"></span>';
+    td.querySelector('[contenteditable]').addEventListener('input', markDirty);
+    row.appendChild(td);
+  });
+
+  markDirty();
+}
+
+function removeColumn(key) {
+  // Remove header th
+  var th = document.querySelector('.le-custom-col-th[data-col-key="' + key + '"]');
+  if (th) th.remove();
+  // Remove all row cells for this column
+  document.querySelectorAll('.le-custom-cell[data-col-key="' + key + '"]').forEach(function (td) {
+    td.remove();
+  });
+  markDirty();
+}
+
+function _esc(str) {
+  return String(str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function removeItemRow(btn) {
