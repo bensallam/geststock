@@ -120,6 +120,14 @@ function requireAuth(): void
 }
 
 /**
+ * Return the company ID of the currently logged-in user, or null.
+ */
+function currentCompanyId(): ?int
+{
+    return isset($_SESSION['company_id']) ? (int) $_SESSION['company_id'] : null;
+}
+
+/**
  * Generate the next invoice number.
  */
 function nextInvoiceNumber(): string

@@ -19,6 +19,11 @@ class GuaranteeCertificate
                    WHERE 1=1";
         $params = [];
 
+        if (!empty($filters['company_id'])) {
+            $sql .= ' AND g.company_id = :company_id';
+            $params[':company_id'] = (int) $filters['company_id'];
+        }
+
         if (!empty($filters['search'])) {
             $sql .= ' AND (g.certificate_number LIKE :s OR g.customer_name LIKE :s OR g.reference LIKE :s)';
             $params[':s'] = '%' . $filters['search'] . '%';

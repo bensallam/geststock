@@ -14,7 +14,7 @@ class ClientController
     public function index(): void
     {
         requireAuth();
-        $filters = ['search' => $_GET['search'] ?? ''];
+        $filters = ['search' => $_GET['search'] ?? '', 'company_id' => currentCompanyId()];
         $clients = $this->client->all($filters);
         require __DIR__ . '/../views/clients/index.php';
     }
@@ -99,6 +99,7 @@ class ClientController
     {
         $errors = [];
         $data   = [
+            'company_id' => currentCompanyId(),
             'name'    => trim($post['name']    ?? ''),
             'address' => trim($post['address'] ?? ''),
             'ice'     => trim($post['ice']     ?? ''),

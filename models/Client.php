@@ -14,6 +14,11 @@ class Client
         $sql    = 'SELECT * FROM clients WHERE 1=1';
         $params = [];
 
+        if (!empty($filters['company_id'])) {
+            $sql .= ' AND company_id = :company_id';
+            $params[':company_id'] = (int) $filters['company_id'];
+        }
+
         if (!empty($filters['search'])) {
             $sql .= ' AND (name LIKE :s OR email LIKE :s OR ice LIKE :s OR phone LIKE :s)';
             $params[':s'] = '%' . $filters['search'] . '%';
@@ -36,15 +41,16 @@ class Client
     public function create(array $d): int
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO clients (name, address, ice, phone, email)
-             VALUES (:name, :addr, :ice, :phone, :email)'
+            'INSERT INTO clients (company_id, name, address, ice, phone, email)
+             VALUES (:coid, :name, :addr, :ice, :phone, :email)'
         );
         $stmt->execute([
+            ':coid'  => $d['company_id'] ?? null,
             ':name'  => $d['name'],
-            ':addr'  => $d['address']  ?? null,
-            ':ice'   => $d['ice']      ?? null,
-            ':phone' => $d['phone']    ?? null,
-            ':email' => $d['email']    ?? null,
+            ':addr'  => $d['address']    ?? null,
+            ':ice'   => $d['ice']        ?? null,
+            ':phone' => $d['phone']      ?? null,
+            ':email' => $d['email']      ?? null,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -89,8 +95,15 @@ class Client
         return (int) $stmt->fetchColumn() > 0;
     }
 
-    public function forSelect(): array
+    public function forSelect(?int $companyId = null): array
     {
+        if ($companyId) {
+            $stmt = $this->db->prepare(
+                'SELECT id, name FROM clients WHERE company_id = :coid ORDER BY name'
+            );
+            $stmt->execute([':coid' => $companyId]);
+            return $stmt->fetchAll();
+        }
         return $this->db->query(
             'SELECT id, name FROM clients ORDER BY name'
         )->fetchAll();

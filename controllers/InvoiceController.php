@@ -29,8 +29,9 @@ class InvoiceController
             'date_to'   => $_GET['date_to']   ?? '',
             'status'    => $_GET['status']    ?? '',
         ];
+        $filters['company_id'] = currentCompanyId();
         $invoices = $this->invoice->all($filters);
-        $clients  = $this->client->forSelect();
+        $clients  = $this->client->forSelect(currentCompanyId());
         require __DIR__ . '/../views/invoices/index.php';
     }
 
@@ -47,7 +48,7 @@ class InvoiceController
     public function create(): void
     {
         requireAuth();
-        $clients   = $this->client->forSelect();
+        $clients   = $this->client->forSelect(currentCompanyId());
         $products  = $this->product->forSelect();
         $companies = (new Company())->forSelect();
         $errors    = [];
@@ -65,7 +66,7 @@ class InvoiceController
         [$data, $items, $errors] = $this->validateInvoice($_POST);
 
         if (!empty($errors)) {
-            $clients   = $this->client->forSelect();
+            $clients   = $this->client->forSelect(currentCompanyId());
             $products  = $this->product->forSelect();
             $companies = (new Company())->forSelect();
             $nextNum   = $data['invoice_number'];
@@ -80,7 +81,7 @@ class InvoiceController
             redirect('invoices/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]  = 'Erreur lors de la création : ' . $e->getMessage();
-            $clients   = $this->client->forSelect();
+            $clients   = $this->client->forSelect(currentCompanyId());
             $products  = $this->product->forSelect();
             $companies = (new Company())->forSelect();
             $nextNum   = $data['invoice_number'];
@@ -97,7 +98,7 @@ class InvoiceController
         if (!$invoice) { $this->notFound(); return; }
 
         $existingItems = $this->invoice->items($id);
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $products      = $this->product->forSelect();
         $companies     = (new Company())->forSelect();
         $errors        = [];
@@ -118,7 +119,7 @@ class InvoiceController
 
         if (!empty($errors)) {
             $existingItems = $this->invoice->items($id);
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = $this->product->forSelect();
             $companies     = (new Company())->forSelect();
             $old           = $_POST;
@@ -133,7 +134,7 @@ class InvoiceController
         } catch (Throwable $e) {
             $errors[]      = 'Erreur lors de la mise à jour : ' . $e->getMessage();
             $existingItems = $this->invoice->items($id);
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = $this->product->forSelect();
             $companies     = (new Company())->forSelect();
             $old           = $_POST;

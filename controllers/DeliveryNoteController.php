@@ -26,8 +26,9 @@ class DeliveryNoteController
             'date_from' => $_GET['date_from'] ?? '',
             'date_to'   => $_GET['date_to']   ?? '',
         ];
+        $filters['company_id'] = currentCompanyId();
         $notes   = $this->note->all($filters);
-        $clients = $this->client->forSelect();
+        $clients = $this->client->forSelect(currentCompanyId());
         require __DIR__ . '/../views/delivery_notes/index.php';
     }
 
@@ -44,7 +45,7 @@ class DeliveryNoteController
     public function create(): void
     {
         requireAuth();
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $products      = (new Product())->forSelect();
         $companies     = (new Company())->forSelect();
         $errors        = [];
@@ -63,7 +64,7 @@ class DeliveryNoteController
         [$data, $items, $errors] = $this->validate($_POST);
 
         if (!empty($errors)) {
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
             $nextNum       = $data['note_number'];
@@ -79,7 +80,7 @@ class DeliveryNoteController
             redirect('delivery-notes/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]      = 'Erreur : ' . $e->getMessage();
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
             $nextNum       = $data['note_number'];
@@ -96,7 +97,7 @@ class DeliveryNoteController
         $note = $this->note->find($id);
         if (!$note) { $this->notFound(); return; }
 
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $products      = (new Product())->forSelect();
         $companies     = (new Company())->forSelect();
         $existingItems = $this->note->items($id);
@@ -117,7 +118,7 @@ class DeliveryNoteController
         [$data, $items, $errors] = $this->validate($_POST, $id);
 
         if (!empty($errors)) {
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
             $existingItems = $this->note->items($id);
@@ -132,7 +133,7 @@ class DeliveryNoteController
             redirect('delivery-notes/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]      = 'Erreur : ' . $e->getMessage();
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
             $existingItems = $this->note->items($id);

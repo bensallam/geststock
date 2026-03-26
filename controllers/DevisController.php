@@ -29,8 +29,9 @@ class DevisController
             'date_to'   => $_GET['date_to']   ?? '',
             'status'    => $_GET['status']    ?? '',
         ];
+        $filters['company_id'] = currentCompanyId();
         $devisList = $this->devis->all($filters);
-        $clients   = $this->client->forSelect();
+        $clients   = $this->client->forSelect(currentCompanyId());
         require __DIR__ . '/../views/devis/index.php';
     }
 
@@ -47,7 +48,7 @@ class DevisController
     public function create(): void
     {
         requireAuth();
-        $clients   = $this->client->forSelect();
+        $clients   = $this->client->forSelect(currentCompanyId());
         $products  = $this->product->forSelect();
         $companies = (new Company())->forSelect();
         $errors    = [];
@@ -65,7 +66,7 @@ class DevisController
         [$data, $items, $errors] = $this->validateDevis($_POST);
 
         if (!empty($errors)) {
-            $clients   = $this->client->forSelect();
+            $clients   = $this->client->forSelect(currentCompanyId());
             $products  = $this->product->forSelect();
             $companies = (new Company())->forSelect();
             $nextNum   = $data['devis_number'];
@@ -80,7 +81,7 @@ class DevisController
             redirect('devis/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]  = 'Erreur lors de la création : ' . $e->getMessage();
-            $clients   = $this->client->forSelect();
+            $clients   = $this->client->forSelect(currentCompanyId());
             $products  = $this->product->forSelect();
             $companies = (new Company())->forSelect();
             $nextNum   = $data['devis_number'];
@@ -97,7 +98,7 @@ class DevisController
         if (!$devis) { $this->notFound(); return; }
 
         $existingItems = $this->devis->items($id);
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $products      = $this->product->forSelect();
         $companies     = (new Company())->forSelect();
         $errors        = [];
@@ -118,7 +119,7 @@ class DevisController
 
         if (!empty($errors)) {
             $existingItems = $this->devis->items($id);
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = $this->product->forSelect();
             $companies     = (new Company())->forSelect();
             $old           = $_POST;
@@ -133,7 +134,7 @@ class DevisController
         } catch (Throwable $e) {
             $errors[]      = 'Erreur lors de la mise à jour : ' . $e->getMessage();
             $existingItems = $this->devis->items($id);
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $products      = $this->product->forSelect();
             $companies     = (new Company())->forSelect();
             $old           = $_POST;

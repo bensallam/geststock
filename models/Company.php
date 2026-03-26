@@ -46,14 +46,16 @@ class Company
 
     public function create(array $data): int
     {
+        $params           = $this->params($data);
+        $params[':lname'] = $params[':name']; // keep live DB `name` column in sync
         $stmt = $this->db->prepare(
             "INSERT INTO companies
-               (company_name, address, phone, email, tax_id,
+               (company_name, name, address, phone, email, tax_id,
                 invoice_notes, invoice_footer,
                 default_warranty_terms, default_payment_method)
-             VALUES (:name, :addr, :phone, :email, :tax, :notes, :footer, :warranty, :pmeth)"
+             VALUES (:name, :lname, :addr, :phone, :email, :tax, :notes, :footer, :warranty, :pmeth)"
         );
-        $stmt->execute($this->params($data));
+        $stmt->execute($params);
         return (int) $this->db->lastInsertId();
     }
 

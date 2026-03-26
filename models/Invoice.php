@@ -19,6 +19,11 @@ class Invoice
                 WHERE 1=1";
         $params = [];
 
+        if (!empty($filters['company_id'])) {
+            $sql .= ' AND i.company_id = :company_id';
+            $params[':company_id'] = (int) $filters['company_id'];
+        }
+
         if (!empty($filters['search'])) {
             $sql .= ' AND (i.invoice_number LIKE :s OR c.name LIKE :s)';
             $params[':s'] = '%' . $filters['search'] . '%';

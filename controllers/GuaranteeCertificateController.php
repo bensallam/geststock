@@ -27,8 +27,9 @@ class GuaranteeCertificateController
             'date_from' => $_GET['date_from'] ?? '',
             'date_to'   => $_GET['date_to']   ?? '',
         ];
+        $filters['company_id'] = currentCompanyId();
         $certs   = $this->cert->all($filters);
-        $clients = $this->client->forSelect();
+        $clients = $this->client->forSelect(currentCompanyId());
         require __DIR__ . '/../views/guarantees/index.php';
     }
 
@@ -45,7 +46,7 @@ class GuaranteeCertificateController
     public function create(): void
     {
         requireAuth();
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $invoices      = $this->invoicesForSelect();
         $products      = (new Product())->forSelect();
         $companies     = (new Company())->forSelect();
@@ -67,7 +68,7 @@ class GuaranteeCertificateController
         [$data, $items, $errors] = $this->validateCertificate($_POST);
 
         if (!empty($errors)) {
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $invoices      = $this->invoicesForSelect();
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
@@ -85,7 +86,7 @@ class GuaranteeCertificateController
             redirect('guarantees/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]      = 'Erreur : ' . $e->getMessage();
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $invoices      = $this->invoicesForSelect();
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
@@ -104,7 +105,7 @@ class GuaranteeCertificateController
         $cert = $this->cert->find($id);
         if (!$cert) { $this->notFound(); return; }
 
-        $clients       = $this->client->forSelect();
+        $clients       = $this->client->forSelect(currentCompanyId());
         $invoices      = $this->invoicesForSelect();
         $products      = (new Product())->forSelect();
         $companies     = (new Company())->forSelect();
@@ -126,7 +127,7 @@ class GuaranteeCertificateController
         [$data, $items, $errors] = $this->validateCertificate($_POST, $id);
 
         if (!empty($errors)) {
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $invoices      = $this->invoicesForSelect();
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();
@@ -142,7 +143,7 @@ class GuaranteeCertificateController
             redirect('guarantees/show?id=' . $id);
         } catch (Throwable $e) {
             $errors[]      = 'Erreur : ' . $e->getMessage();
-            $clients       = $this->client->forSelect();
+            $clients       = $this->client->forSelect(currentCompanyId());
             $invoices      = $this->invoicesForSelect();
             $products      = (new Product())->forSelect();
             $companies     = (new Company())->forSelect();

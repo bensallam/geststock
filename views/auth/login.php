@@ -51,9 +51,11 @@
       </button>
     </form>
 
-    <div class="mt-3 text-center text-muted small">
-      <strong>Démo :</strong> admin@facturation.ma / admin123
-    </div>
+    <hr class="my-3">
+    <p class="text-center small text-muted mb-0">
+      Pas encore de compte ?
+      <a href="<?= APP_URL ?>/register" class="fw-semibold">Créer un compte</a>
+    </p>
   </div>
 </div>
 

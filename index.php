@@ -37,6 +37,7 @@ $routes = [
     // Auth
     'login'                    => ['AuthController',      'login'],
     'logout'                   => ['AuthController',      'logout'],
+    'register'                 => ['AuthController',      'register'],
 
     // Dashboard
     'dashboard'                => ['DashboardController', 'index'],

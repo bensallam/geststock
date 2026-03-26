@@ -19,6 +19,11 @@ class DeliveryNote
                    WHERE 1=1";
         $params = [];
 
+        if (!empty($filters['company_id'])) {
+            $sql .= ' AND d.company_id = :company_id';
+            $params[':company_id'] = (int) $filters['company_id'];
+        }
+
         if (!empty($filters['search'])) {
             $sql .= ' AND (d.note_number LIKE :s OR d.customer_name LIKE :s OR d.reference LIKE :s)';
             $params[':s'] = '%' . $filters['search'] . '%';
