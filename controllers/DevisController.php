@@ -167,6 +167,74 @@ class DevisController
         require __DIR__ . '/../views/devis/print.php';
     }
 
+    public function liveEdit(): void
+    {
+        requireAuth();
+        $id    = (int) ($_GET['id'] ?? 0);
+        $devis = $this->devis->find($id);
+        if (!$devis) { $this->notFound(); return; }
+        $items   = $this->devis->items($id);
+        $company = $this->loadDocumentCompany($devis);
+        require __DIR__ . '/../views/devis/live_edit.php';
+    }
+
+    public function liveUpdate(): void
+    {
+        requireAuth();
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || empty($input['id'])) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid request']); return;
+        }
+        $id    = (int) $input['id'];
+        $devis = $this->devis->find($id);
+        if (!$devis) { echo json_encode(['ok' => false, 'error' => 'Devis introuvable']); return; }
+
+        $validStatuses = ['draft', 'sent', 'accepted', 'rejected'];
+        $status = $input['status'] ?? $devis['status'];
+
+        $data = [
+            'devis_number'   => trim($input['devis_number']  ?? $devis['devis_number']),
+            'client_id'      => $devis['client_id'],
+            'date'           => trim($input['date']          ?? $devis['date']),
+            'validity_date'  => trim($input['validity_date'] ?? $devis['validity_date'] ?? ''),
+            'tax_rate'       => isset($input['tax_rate']) ? (float) $input['tax_rate'] : (float) $devis['tax_rate'],
+            'notes'          => trim($input['notes']         ?? $devis['notes'] ?? ''),
+            'status'         => in_array($status, $validStatuses, true) ? $status : $devis['status'],
+            'payment_method' => $devis['payment_method'] ?? '',
+            'company_id'     => $devis['company_id'],
+            'use_watermark'  => $devis['use_watermark'],
+        ];
+
+        $rawItems = [];
+        foreach (($input['items'] ?? []) as $item) {
+            $label = trim($item['label'] ?? '');
+            $qty   = (float) ($item['quantity']  ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+            if ($label === '' || $qty <= 0) continue;
+            $rawItems[] = [
+                'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                'label'      => $label,
+                'quantity'   => $qty,
+                'unit_price' => $price,
+            ];
+        }
+
+        $totalHt   = round(array_sum(array_map(fn($i) => $i['quantity'] * $i['unit_price'], $rawItems)), 2);
+        $taxAmount = round($totalHt * $data['tax_rate'] / 100, 2);
+        $totalTtc  = round($totalHt + $taxAmount, 2);
+        $data['total_ht']   = $totalHt;
+        $data['tax_amount'] = $taxAmount;
+        $data['total_ttc']  = $totalTtc;
+
+        try {
+            $this->devis->update($id, $data, $rawItems);
+            echo json_encode(['ok' => true, 'amount_words' => amountInWords($totalTtc)]);
+        } catch (Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function pdf(): void
     {
         requireAuth();

@@ -21,6 +21,10 @@ $st = $statusMap[$devis['status']] ?? ['label' => $devis['status'], 'class' => '
     <span class="badge bg-<?= $st['class'] ?> fs-6"><?= $st['label'] ?></span>
   </div>
   <div class="d-flex gap-2">
+    <a href="<?= APP_URL ?>/devis/live-edit?id=<?= $devis['id'] ?>"
+       class="btn btn-outline-info">
+      <i class="bi bi-pencil-square me-1"></i> Éditeur live
+    </a>
     <a href="<?= APP_URL ?>/devis/print?id=<?= $devis['id'] ?>"
        class="btn btn-outline-secondary" target="_blank">
       <i class="bi bi-printer me-1"></i> Imprimer

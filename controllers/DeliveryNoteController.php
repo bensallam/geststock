@@ -167,6 +167,65 @@ class DeliveryNoteController
         require __DIR__ . '/../views/delivery_notes/print.php';
     }
 
+    public function liveEdit(): void
+    {
+        requireAuth();
+        $id      = (int) ($_GET['id'] ?? 0);
+        $note    = $this->note->find($id);
+        if (!$note) { $this->notFound(); return; }
+        $items   = $this->note->items($id);
+        $company = $this->loadDocumentCompany($note);
+        require __DIR__ . '/../views/delivery_notes/live_edit.php';
+    }
+
+    public function liveUpdate(): void
+    {
+        requireAuth();
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || empty($input['id'])) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid request']); return;
+        }
+        $id   = (int) $input['id'];
+        $note = $this->note->find($id);
+        if (!$note) { echo json_encode(['ok' => false, 'error' => 'Bon introuvable']); return; }
+
+        $data = [
+            'note_number'    => trim($input['note_number']    ?? $note['note_number']),
+            'client_id'      => $note['client_id'],
+            'customer_name'  => trim($input['customer_name']  ?? $note['customer_name'] ?? ''),
+            'client_address' => trim($input['client_address'] ?? $note['client_address'] ?? ''),
+            'delivery_date'  => trim($input['delivery_date']  ?? $note['delivery_date']),
+            'reference'      => trim($input['reference']      ?? $note['reference'] ?? ''),
+            'notes'          => trim($input['notes']          ?? $note['notes'] ?? ''),
+            'show_prices'    => $note['show_prices'],
+            'payment_method' => $note['payment_method'] ?? '',
+            'company_id'     => $note['company_id'],
+            'use_watermark'  => $note['use_watermark'],
+        ];
+
+        $rawItems = [];
+        foreach (($input['items'] ?? []) as $item) {
+            $label = trim($item['label'] ?? '');
+            $qty   = (float) ($item['quantity']  ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+            if ($label === '' || $qty <= 0) continue;
+            $rawItems[] = [
+                'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                'label'      => $label,
+                'quantity'   => $qty,
+                'unit_price' => $price,
+            ];
+        }
+
+        try {
+            $this->note->update($id, $data, $rawItems);
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function pdf(): void
     {
         requireAuth();

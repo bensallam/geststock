@@ -69,6 +69,8 @@ $routes = [
     'invoices/delete'          => ['InvoiceController',   'delete'],
     'invoices/print'           => ['InvoiceController',   'printView'],
     'invoices/pdf'             => ['InvoiceController',   'pdf'],
+    'invoices/live-edit'       => ['InvoiceController',   'liveEdit'],
+    'invoices/live-update'     => ['InvoiceController',   'liveUpdate'],
 
     // Stock
     'stock'                    => ['StockController',     'index'],
@@ -89,6 +91,8 @@ $routes = [
     'delivery-notes/delete'    => ['DeliveryNoteController', 'delete'],
     'delivery-notes/print'     => ['DeliveryNoteController', 'printView'],
     'delivery-notes/pdf'       => ['DeliveryNoteController', 'pdf'],
+    'delivery-notes/live-edit'   => ['DeliveryNoteController', 'liveEdit'],
+    'delivery-notes/live-update' => ['DeliveryNoteController', 'liveUpdate'],
 
     // Guarantees
     'guarantees'               => ['GuaranteeCertificateController', 'index'],
@@ -100,6 +104,8 @@ $routes = [
     'guarantees/delete'        => ['GuaranteeCertificateController', 'delete'],
     'guarantees/print'         => ['GuaranteeCertificateController', 'printView'],
     'guarantees/pdf'           => ['GuaranteeCertificateController', 'pdf'],
+    'guarantees/live-edit'     => ['GuaranteeCertificateController', 'liveEdit'],
+    'guarantees/live-update'   => ['GuaranteeCertificateController', 'liveUpdate'],
 
     // Devis
     'devis'                    => ['DevisController',   'index'],
@@ -111,6 +117,8 @@ $routes = [
     'devis/delete'             => ['DevisController',   'delete'],
     'devis/print'              => ['DevisController',   'printView'],
     'devis/pdf'                => ['DevisController',   'pdf'],
+    'devis/live-edit'          => ['DevisController',   'liveEdit'],
+    'devis/live-update'        => ['DevisController',   'liveUpdate'],
 
     // Onboarding
     'onboarding'               => ['OnboardingController', 'show'],

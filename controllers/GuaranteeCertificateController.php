@@ -178,6 +178,69 @@ class GuaranteeCertificateController
         require __DIR__ . '/../views/guarantees/print.php';
     }
 
+    public function liveEdit(): void
+    {
+        requireAuth();
+        $id      = (int) ($_GET['id'] ?? 0);
+        $cert    = $this->cert->find($id);
+        if (!$cert) { $this->notFound(); return; }
+        $items   = $this->cert->items($id);
+        $company = $this->loadDocumentCompany($cert);
+        require __DIR__ . '/../views/guarantees/live_edit.php';
+    }
+
+    public function liveUpdate(): void
+    {
+        requireAuth();
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || empty($input['id'])) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid request']); return;
+        }
+        $id   = (int) $input['id'];
+        $cert = $this->cert->find($id);
+        if (!$cert) { echo json_encode(['ok' => false, 'error' => 'Certificat introuvable']); return; }
+
+        $data = [
+            'certificate_number' => trim($input['certificate_number'] ?? $cert['certificate_number']),
+            'client_id'          => $cert['client_id'],
+            'invoice_id'         => $cert['invoice_id'],
+            'customer_name'      => trim($input['customer_name']  ?? $cert['customer_name']  ?? ''),
+            'client_address'     => trim($input['client_address'] ?? $cert['client_address'] ?? ''),
+            'reference'          => trim($input['reference']      ?? $cert['reference']      ?? ''),
+            'product_details'    => trim($input['product_details'] ?? $cert['product_details'] ?? ''),
+            'start_date'         => trim($input['start_date']     ?? $cert['start_date']     ?? ''),
+            'end_date'           => trim($input['end_date']       ?? $cert['end_date']       ?? ''),
+            'delivery_date'      => trim($input['delivery_date']  ?? $cert['delivery_date']  ?? ''),
+            'terms'              => trim($input['terms']          ?? $cert['terms']          ?? ''),
+            'notes'              => trim($input['notes']          ?? $cert['notes']          ?? ''),
+            'payment_method'     => $cert['payment_method'] ?? '',
+            'company_id'         => $cert['company_id'],
+            'use_watermark'      => $cert['use_watermark'],
+        ];
+
+        $rawItems = [];
+        foreach (($input['items'] ?? []) as $item) {
+            $label = trim($item['label'] ?? '');
+            $qty   = (float) ($item['quantity']  ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+            if ($label === '' || $qty <= 0) continue;
+            $rawItems[] = [
+                'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                'label'      => $label,
+                'quantity'   => $qty,
+                'unit_price' => $price,
+            ];
+        }
+
+        try {
+            $this->cert->update($id, $data, $rawItems);
+            echo json_encode(['ok' => true]);
+        } catch (Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function pdf(): void
     {
         requireAuth();

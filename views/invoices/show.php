@@ -21,6 +21,10 @@ $st = $statusMap[$invoice['status']] ?? ['label' => $invoice['status'], 'class' 
     <span class="badge bg-<?= $st['class'] ?> fs-6"><?= $st['label'] ?></span>
   </div>
   <div class="d-flex gap-2">
+    <a href="<?= APP_URL ?>/invoices/live-edit?id=<?= $invoice['id'] ?>"
+       class="btn btn-outline-info">
+      <i class="bi bi-pencil-square me-1"></i> Éditeur live
+    </a>
     <a href="<?= APP_URL ?>/invoices/print?id=<?= $invoice['id'] ?>"
        class="btn btn-outline-secondary" target="_blank">
       <i class="bi bi-printer me-1"></i> Imprimer

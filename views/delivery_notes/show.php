@@ -12,6 +12,10 @@ $grandTotal = $hasPrice ? array_sum(array_column($items, 'total')) : 0;
     <i class="bi bi-truck me-2 text-primary"></i><?= e($note['note_number']) ?>
   </h4>
   <div class="d-flex gap-2 flex-wrap">
+    <a href="<?= APP_URL ?>/delivery-notes/live-edit?id=<?= $note['id'] ?>"
+       class="btn btn-outline-info">
+      <i class="bi bi-pencil-square me-1"></i> Éditeur live
+    </a>
     <a href="<?= APP_URL ?>/delivery-notes/print?id=<?= $note['id'] ?>"
        class="btn btn-outline-secondary" target="_blank">
       <i class="bi bi-printer me-1"></i> Imprimer

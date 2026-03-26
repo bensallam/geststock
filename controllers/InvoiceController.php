@@ -169,6 +169,75 @@ class InvoiceController
         require __DIR__ . '/../views/invoices/print.php';
     }
 
+    public function liveEdit(): void
+    {
+        requireAuth();
+        $id      = (int) ($_GET['id'] ?? 0);
+        $invoice = $this->invoice->find($id);
+        if (!$invoice) { $this->notFound(); return; }
+        $items   = $this->invoice->items($id);
+        $company = $this->loadDocumentCompany($invoice);
+        require __DIR__ . '/../views/invoices/live_edit.php';
+    }
+
+    public function liveUpdate(): void
+    {
+        requireAuth();
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (!$input || empty($input['id'])) {
+            echo json_encode(['ok' => false, 'error' => 'Invalid request']); return;
+        }
+        $id      = (int) $input['id'];
+        $invoice = $this->invoice->find($id);
+        if (!$invoice) { echo json_encode(['ok' => false, 'error' => 'Facture introuvable']); return; }
+
+        $validMethods  = ['cheque', 'espece', 'virement'];
+        $validStatuses = ['draft', 'sent', 'paid', 'cancelled'];
+        $pm     = $input['payment_method'] ?? '';
+        $status = $input['status'] ?? $invoice['status'];
+
+        $data = [
+            'invoice_number' => trim($input['invoice_number'] ?? $invoice['invoice_number']),
+            'client_id'      => $invoice['client_id'],
+            'date'           => trim($input['date'] ?? $invoice['date']),
+            'tax_rate'       => isset($input['tax_rate']) ? (float) $input['tax_rate'] : (float) $invoice['tax_rate'],
+            'notes'          => trim($input['notes'] ?? $invoice['notes'] ?? ''),
+            'status'         => in_array($status, $validStatuses, true) ? $status : $invoice['status'],
+            'payment_method' => in_array($pm, $validMethods, true) ? $pm : ($invoice['payment_method'] ?? ''),
+            'company_id'     => $invoice['company_id'],
+            'use_watermark'  => $invoice['use_watermark'],
+        ];
+
+        $rawItems = [];
+        foreach (($input['items'] ?? []) as $item) {
+            $label = trim($item['label'] ?? '');
+            $qty   = (float) ($item['quantity']  ?? 0);
+            $price = (float) ($item['unit_price'] ?? 0);
+            if ($label === '' || $qty <= 0) continue;
+            $rawItems[] = [
+                'product_id' => !empty($item['product_id']) ? (int) $item['product_id'] : null,
+                'label'      => $label,
+                'quantity'   => $qty,
+                'unit_price' => $price,
+            ];
+        }
+
+        $totalHt   = round(array_sum(array_map(fn($i) => $i['quantity'] * $i['unit_price'], $rawItems)), 2);
+        $taxAmount = round($totalHt * $data['tax_rate'] / 100, 2);
+        $totalTtc  = round($totalHt + $taxAmount, 2);
+        $data['total_ht']   = $totalHt;
+        $data['tax_amount'] = $taxAmount;
+        $data['total_ttc']  = $totalTtc;
+
+        try {
+            $this->invoice->update($id, $data, $rawItems);
+            echo json_encode(['ok' => true, 'amount_words' => amountInWords($totalTtc)]);
+        } catch (Throwable $e) {
+            echo json_encode(['ok' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function pdf(): void
     {
         requireAuth();

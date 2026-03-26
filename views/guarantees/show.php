@@ -26,6 +26,10 @@ $grandTotal = array_sum(array_column($items, 'total'));
     <?php endif; ?>
   </h4>
   <div class="d-flex gap-2 flex-wrap">
+    <a href="<?= APP_URL ?>/guarantees/live-edit?id=<?= $cert['id'] ?>"
+       class="btn btn-outline-info">
+      <i class="bi bi-pencil-square me-1"></i> Éditeur live
+    </a>
     <a href="<?= APP_URL ?>/guarantees/print?id=<?= $cert['id'] ?>"
        class="btn btn-outline-secondary" target="_blank">
       <i class="bi bi-printer me-1"></i> Imprimer
